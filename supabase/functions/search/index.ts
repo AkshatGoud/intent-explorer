@@ -91,7 +91,7 @@ serve(async (req) => {
       const text = `${intent.title} ${intent.summary} ${(intent.keywords as string[]).join(' ')}`;
       const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 2);
       for (const word of words) {
-        if (!vocabulary.has(word) && vocabulary.size < 1000) {
+        if (!vocabulary.has(word) && vocabulary.size < 2000) { // Increased from 1000 to 2000
           vocabulary.set(word, vocabIndex++);
         }
       }
@@ -108,19 +108,54 @@ serve(async (req) => {
       
       const sim = cosineSimilarity(queryEmbedding, intentEmbedding);
       
-      // Boost by keyword match
-      const queryWords = new Set(query.toLowerCase().split(/\s+/));
+      let totalBoost = 0;
+      
+      // Normalize query for matching
+      const queryLower = query.toLowerCase();
+      const queryWords = queryLower.split(/\s+/).filter(w => w.length > 0);
+      const titleLower = intent.title.toLowerCase();
       const keywords = intent.keywords as string[];
-      const keywordBoost = keywords.filter(k => queryWords.has(k.toLowerCase())).length * 0.1;
+      
+      // 1. Title matching boost (highest priority)
+      if (titleLower.includes(queryLower)) {
+        totalBoost += 0.3; // Exact phrase in title
+      } else {
+        // Check if all query words appear in title
+        const titleWordsMatched = queryWords.filter(qw => titleLower.includes(qw)).length;
+        if (titleWordsMatched > 0) {
+          totalBoost += (titleWordsMatched / queryWords.length) * 0.15; // Partial title match
+        }
+      }
+      
+      // 2. Keyword matching boost
+      for (const keyword of keywords) {
+        const keywordLower = keyword.toLowerCase();
+        for (const queryWord of queryWords) {
+          // Exact keyword match
+          if (keywordLower === queryWord) {
+            totalBoost += 0.15;
+          }
+          // Partial keyword match (query word is substring of keyword or vice versa)
+          else if (keywordLower.includes(queryWord) || queryWord.includes(keywordLower)) {
+            totalBoost += 0.08;
+          }
+        }
+      }
+      
+      // 3. Summary matching boost
+      const summaryLower = intent.summary.toLowerCase();
+      if (summaryLower.includes(queryLower)) {
+        totalBoost += 0.1; // Exact phrase in summary
+      }
       
       return {
         intent,
-        score: Math.min(1, sim + keywordBoost),
+        score: Math.min(1, sim + totalBoost),
       };
     });
 
     scored.sort((a, b) => b.score - a.score);
-    const topResults = scored.slice(0, top_k).filter(r => r.score > 0.1);
+    const topResults = scored.slice(0, top_k).filter(r => r.score > 0.15); // Increased threshold from 0.1 to 0.15
 
     // Fetch evidence for top results
     const results = await Promise.all(topResults.map(async ({ intent, score }) => {

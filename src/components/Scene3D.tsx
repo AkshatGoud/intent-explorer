@@ -1,9 +1,9 @@
-import { useRef, useState, useMemo, useCallback } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Html, Float, Line, Sphere, Sparkles } from '@react-three/drei';
+import { OrbitControls, Html, Stars } from '@react-three/drei';
 import { motion } from 'framer-motion';
 import * as THREE from 'three';
-import { IntentNode, Edge, NODE_COLORS } from '@/types';
+import { IntentNode, Edge } from '@/types';
 
 interface IntentNode3DProps {
   node: IntentNode;
@@ -16,104 +16,91 @@ interface IntentNode3DProps {
 
 function IntentNode3D({ node, isSelected, isHighlighted, isDimmed, onClick, onHover }: IntentNode3DProps) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
   
-  const colorIndex = useMemo(() => {
-    const colors: Record<string, number> = {
-      cyan: 0, purple: 1, blue: 2, teal: 3, pink: 4, gold: 5, green: 6
-    };
-    return colors[node.color_group] ?? 0;
-  }, [node.color_group]);
-
-  const color = useMemo(() => new THREE.Color(NODE_COLORS[colorIndex]), [colorIndex]);
-  const scale = useMemo(() => Math.max(0.3, Math.min(1.5, node.size / 15)), [node.size]);
+  // Unified bright cyan color for all nodes
+  const color = useMemo(() => new THREE.Color('#00d4ff'), []);
+  
+  // Animation offset for unique floating pattern per node
+  const floatOffset = useMemo(() => Math.random() * Math.PI * 2, []);
 
   useFrame((state) => {
     if (meshRef.current) {
-      // Subtle breathing animation
-      const t = state.clock.elapsedTime;
-      meshRef.current.scale.setScalar(scale * (1 + Math.sin(t * 2 + node.position.x) * 0.05));
+      // Floating animation
+      const floatY = Math.sin(state.clock.elapsedTime * 0.5 + floatOffset) * 0.1;
+      meshRef.current.position.y = node.position.y + floatY;
+
+      // Scale animation for active/hovered
+      const targetScale = isSelected ? 1.4 : hovered ? 1.2 : 1;
+      meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+    }
+
+    if (glowRef.current) {
+      // Pulsing glow animation
+      const glowScale = isSelected ? 2.5 + Math.sin(state.clock.elapsedTime * 2) * 0.3 : hovered ? 2 : 1.5;
+      glowRef.current.scale.lerp(new THREE.Vector3(glowScale, glowScale, glowScale), 0.1);
       
-      // Glow intensity based on state
-      const material = meshRef.current.material as THREE.MeshStandardMaterial;
-      if (material) {
-        const targetEmissive = (isSelected || hovered) ? 0.5 : isHighlighted ? 0.3 : isDimmed ? 0.05 : 0.15;
-        material.emissiveIntensity = THREE.MathUtils.lerp(material.emissiveIntensity, targetEmissive, 0.1);
-        material.opacity = THREE.MathUtils.lerp(material.opacity, isDimmed ? 0.3 : 1, 0.1);
-      }
+      // Glow opacity
+      const material = glowRef.current.material as THREE.MeshBasicMaterial;
+      const targetOpacity = isSelected ? 0.4 : hovered ? 0.2 : isDimmed ? 0.05 : 0.1;
+      material.opacity = THREE.MathUtils.lerp(material.opacity, targetOpacity, 0.1);
     }
   });
 
   return (
-    <Float speed={0.5} rotationIntensity={0.1} floatIntensity={0.3}>
-      <group position={[node.position.x, node.position.y, node.position.z]}>
-        <Sphere
-          ref={meshRef}
-          args={[0.5, 32, 32]}
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick();
-          }}
-          onPointerOver={(e) => {
-            e.stopPropagation();
-            setHovered(true);
-            onHover(true);
-            document.body.style.cursor = 'pointer';
-          }}
-          onPointerOut={(e) => {
-            e.stopPropagation();
-            setHovered(false);
-            onHover(false);
-            document.body.style.cursor = 'default';
-          }}
-        >
-          <meshStandardMaterial
-            color={color}
-            emissive={color}
-            emissiveIntensity={0.15}
-            roughness={0.3}
-            metalness={0.6}
-            transparent
-            opacity={1}
-          />
-        </Sphere>
+    <group position={[node.position.x, node.position.y, node.position.z]}>
+      {/* Glow sphere */}
+      <mesh ref={glowRef}>
+        <sphereGeometry args={[0.4, 32, 32]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.1}
+          depthWrite={false}
+        />
+      </mesh>
 
-        {/* Glow effect */}
-        {(isSelected || hovered) && (
-          <Sphere args={[0.7, 16, 16]} scale={scale}>
-            <meshBasicMaterial
-              color={color}
-              transparent
-              opacity={0.15}
-              depthWrite={false}
-            />
-          </Sphere>
-        )}
+      {/* Main node sphere */}
+      <mesh
+        ref={meshRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setHovered(true);
+          onHover(true);
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          setHovered(false);
+          onHover(false);
+          document.body.style.cursor = 'auto';
+        }}
+      >
+        <sphereGeometry args={[0.25, 32, 32]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={isSelected ? 1.2 : hovered ? 0.8 : isDimmed ? 0.1 : 0.4}
+          roughness={0.3}
+          metalness={0.7}
+          transparent
+          opacity={isDimmed ? 0.3 : 1}
+        />
+      </mesh>
 
-        {/* Tooltip on hover */}
-        {hovered && !isSelected && (
-          <Html
-            position={[0, scale + 0.5, 0]}
-            center
-            style={{
-              pointerEvents: 'none',
-              transform: 'translateY(-100%)',
-            }}
-          >
-            <div className="glass-panel px-3 py-2 max-w-[200px] animate-fade-in">
-              <p className="text-sm font-medium text-foreground truncate">{node.title}</p>
-              <div className="flex gap-1 mt-1 flex-wrap">
-                {node.keywords.slice(0, 3).map((kw) => (
-                  <span key={kw} className="text-[10px] text-primary bg-primary/10 px-1 rounded">
-                    {kw}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </Html>
-        )}
-      </group>
-    </Float>
+      {/* Inner core with light source */}
+      <mesh>
+        <sphereGeometry args={[0.1, 16, 16]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.8} />
+      </mesh>
+      
+      {/* Nodes are self-illuminating via emissive material - no separate point lights needed */}
+    </group>
   );
 }
 
@@ -135,13 +122,22 @@ function EdgeLine({ edge, nodes, visible }: EdgeLineProps) {
   ];
 
   return (
-    <Line
-      points={points}
-      color="hsl(186, 60%, 40%)"
-      lineWidth={1}
-      transparent
-      opacity={edge.weight * 0.3}
-    />
+    <line>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={2}
+          array={new Float32Array(points.flatMap(p => [p.x, p.y, p.z]))}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <lineBasicMaterial 
+        color="#ffffff" 
+        transparent 
+        opacity={0.5}
+        linewidth={2}
+      />
+    </line>
   );
 }
 
@@ -150,7 +146,7 @@ interface CameraControllerProps {
 }
 
 function CameraController({ targetPosition }: CameraControllerProps) {
-  const { camera, controls } = useThree();
+  const { camera } = useThree();
   const controlsRef = useRef<any>(null);
 
   useFrame(() => {
@@ -212,33 +208,20 @@ export function Scene3D({
 
   return (
     <Canvas
-      camera={{ position: [8, 5, 8], fov: 50 }}
+      camera={{ position: [0, 0, 10], fov: 60 }}
       className="three-canvas"
       gl={{ antialias: true, alpha: true }}
+      dpr={[1, 2]}
     >
-      <color attach="background" args={['hsl(222, 47%, 6%)']} />
+      <color attach="background" args={['hsl(222, 47%, 4%)']} />
       
       {/* Lighting */}
-      <ambientLight intensity={0.4} />
-      <pointLight position={[10, 10, 10]} intensity={1} />
-      <pointLight position={[-10, -10, -10]} intensity={0.5} color="hsl(270, 60%, 60%)" />
-      <spotLight
-        position={[0, 20, 0]}
-        angle={0.5}
-        penumbra={1}
-        intensity={0.8}
-        color="hsl(186, 100%, 60%)"
-      />
+      <ambientLight intensity={0.2} />
+      <directionalLight position={[10, 10, 5]} intensity={0.5} color="#ffffff" />
+      {/* Point lights now emanate from each node's white core */}
 
-      {/* Background particles */}
-      <Sparkles
-        count={200}
-        size={1.5}
-        scale={30}
-        color="hsl(186, 80%, 60%)"
-        opacity={0.3}
-        speed={0.3}
-      />
+      {/* Background stars */}
+      <Stars radius={50} depth={50} count={3000} factor={8} saturation={0} fade speed={0.5} />
 
       {/* Edges */}
       {edges.map((edge) => (

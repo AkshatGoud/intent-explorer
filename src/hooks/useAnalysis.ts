@@ -137,7 +137,7 @@ export function useSearch() {
 
     try {
       const { data, error } = await supabase.functions.invoke('search', {
-        body: { graph_id: graphId, query, top_k: 10 },
+        body: { graph_id: graphId, query, top_k: 15 }, // Increased from 10 to 15
       });
 
       if (error) throw error;

@@ -128,12 +128,7 @@ export const DEMO_URLS = [
   },
 ];
 
+// Unified color for all nodes - bright cyan for excellent contrast against dark background
 export const NODE_COLORS = [
-  'hsl(186, 100%, 60%)',  // cyan
-  'hsl(270, 60%, 65%)',   // purple
-  'hsl(220, 80%, 60%)',   // blue
-  'hsl(170, 70%, 50%)',   // teal
-  'hsl(330, 70%, 60%)',   // pink
-  'hsl(45, 90%, 55%)',    // gold
-  'hsl(140, 60%, 50%)',   // green
+  'hsl(186, 100%, 70%)',  // bright cyan (used for all nodes)
 ];

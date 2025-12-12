@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,13 +12,21 @@ import { cn } from '@/lib/utils';
 interface URLInputProps {
   onAnalyze: (url: string, params: AnalysisParams) => void;
   isLoading?: boolean;
+  initialUrl?: string;
 }
 
-export function URLInput({ onAnalyze, isLoading }: URLInputProps) {
-  const [url, setUrl] = useState('');
+export function URLInput({ onAnalyze, isLoading, initialUrl = '' }: URLInputProps) {
+  const [url, setUrl] = useState(initialUrl);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [params, setParams] = useState<AnalysisParams>(DEFAULT_PARAMS);
   const [error, setError] = useState<string | null>(null);
+
+  // Update URL when initialUrl prop changes
+  useEffect(() => {
+    if (initialUrl) {
+      setUrl(initialUrl);
+    }
+  }, [initialUrl]);
 
   const validateUrl = (value: string): boolean => {
     if (!value.trim()) {

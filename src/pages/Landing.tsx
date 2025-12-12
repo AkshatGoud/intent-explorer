@@ -120,7 +120,7 @@ const Landing = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
               >
-                <URLInput onAnalyze={handleAnalyze} isLoading={isAnalyzing} />
+                <URLInput onAnalyze={handleAnalyze} isLoading={isAnalyzing} initialUrl={inputUrl} />
               </motion.div>
 
               {/* Demo suggestions */}
