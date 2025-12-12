@@ -1,22 +1,32 @@
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { Home, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const NotFound = () => {
-  const location = useLocation();
-
-  useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
-  }, [location.pathname]);
+  const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
-          Return to Home
-        </a>
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center space-y-6"
+      >
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10 border border-destructive/30">
+          <AlertCircle className="w-8 h-8 text-destructive" />
+        </div>
+
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold">404</h1>
+          <p className="text-muted-foreground">This page doesn't exist in this intent space.</p>
+        </div>
+
+        <Button variant="outline" onClick={() => navigate('/')}>
+          <Home className="w-4 h-4 mr-2" />
+          Back to Home
+        </Button>
+      </motion.div>
     </div>
   );
 };
