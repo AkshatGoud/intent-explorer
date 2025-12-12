@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -15,9 +15,8 @@ import { Scene3D } from '@/components/Scene3D';
 import { SearchBox } from '@/components/SearchBox';
 import { DetailPanel } from '@/components/DetailPanel';
 import { AboutModal } from '@/components/AboutModal';
-import { GraphData, IntentNode, Evidence } from '@/types';
+import { GraphData, IntentNode } from '@/types';
 import { useNodeDetails } from '@/hooks/useAnalysis';
-import { cn } from '@/lib/utils';
 
 interface ExplorerViewProps {
   graphData: GraphData;
@@ -30,29 +29,6 @@ export function ExplorerView({ graphData, onBack }: ExplorerViewProps) {
   const [highlightedNodeIds, setHighlightedNodeIds] = useState<string[]>([]);
   const [showEdges, setShowEdges] = useState(true);
   const { isLoading: isLoadingEvidence, evidence, fetchDetails } = useNodeDetails();
-
-  // Mock evidence for demo
-  const mockEvidence: Evidence[] = useMemo(() => {
-    if (!selectedNode) return [];
-    return [
-      {
-        id: 'ev-1',
-        intent_id: selectedNode.id,
-        page_id: 'p1',
-        url: selectedNode.source_urls[0] || 'https://example.com',
-        page_title: `${selectedNode.title} | Documentation`,
-        snippet: `This section covers ${selectedNode.keywords.join(', ')}. ${selectedNode.summary.slice(0, 100)}...`,
-      },
-      {
-        id: 'ev-2',
-        intent_id: selectedNode.id,
-        page_id: 'p2',
-        url: selectedNode.source_urls[1] || 'https://example.com/guide',
-        page_title: 'Getting Started Guide',
-        snippet: `Learn more about ${selectedNode.title.toLowerCase()} and how to implement it effectively in your project.`,
-      },
-    ];
-  }, [selectedNode]);
 
   const handleNodeSelect = useCallback((node: IntentNode) => {
     setSelectedNode(node);
@@ -170,7 +146,7 @@ export function ExplorerView({ graphData, onBack }: ExplorerViewProps) {
           {selectedNode && (
             <DetailPanel
               node={selectedNode}
-              evidence={mockEvidence}
+              evidence={evidence}
               isLoading={isLoadingEvidence}
               onClose={handleClosePanel}
             />

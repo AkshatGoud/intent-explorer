@@ -1,113 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Analysis, AnalysisParams, AnalysisStep, ANALYSIS_STEPS, DEFAULT_PARAMS, GraphData } from '@/types';
-
-// Mock data for demo - in production this would call the backend
-const mockGraphData: GraphData = {
-  graph_id: 'demo-1',
-  created_at: new Date().toISOString(),
-  source_url: 'https://example.com',
-  nodes: [
-    {
-      id: 'node-1',
-      analysis_id: 'demo-1',
-      title: 'Getting Started',
-      summary: 'Introduction and setup guide for new users. Covers installation, configuration, and first steps.',
-      keywords: ['setup', 'installation', 'quickstart', 'introduction'],
-      centroid_embedding: [],
-      size: 12,
-      source_urls: ['https://example.com/docs/intro', 'https://example.com/docs/setup'],
-      position: { x: 0, y: 0, z: 0 },
-      color_group: 'cyan',
-    },
-    {
-      id: 'node-2',
-      analysis_id: 'demo-1',
-      title: 'Core Concepts',
-      summary: 'Fundamental principles and architecture patterns. Understanding the building blocks of the system.',
-      keywords: ['concepts', 'architecture', 'fundamentals', 'principles'],
-      centroid_embedding: [],
-      size: 18,
-      source_urls: ['https://example.com/docs/concepts', 'https://example.com/docs/architecture'],
-      position: { x: 3, y: 1, z: -1 },
-      color_group: 'purple',
-    },
-    {
-      id: 'node-3',
-      analysis_id: 'demo-1',
-      title: 'API Reference',
-      summary: 'Complete API documentation with endpoints, parameters, and examples for integration.',
-      keywords: ['api', 'endpoints', 'reference', 'integration'],
-      centroid_embedding: [],
-      size: 24,
-      source_urls: ['https://example.com/api/v1', 'https://example.com/api/reference'],
-      position: { x: -2, y: 2, z: 2 },
-      color_group: 'blue',
-    },
-    {
-      id: 'node-4',
-      analysis_id: 'demo-1',
-      title: 'Authentication',
-      summary: 'Security and authentication methods including OAuth, API keys, and session management.',
-      keywords: ['auth', 'security', 'oauth', 'tokens'],
-      centroid_embedding: [],
-      size: 15,
-      source_urls: ['https://example.com/docs/auth'],
-      position: { x: 1, y: -2, z: 1 },
-      color_group: 'teal',
-    },
-    {
-      id: 'node-5',
-      analysis_id: 'demo-1',
-      title: 'Best Practices',
-      summary: 'Recommended patterns and guidelines for optimal performance and maintainability.',
-      keywords: ['best practices', 'patterns', 'guidelines', 'optimization'],
-      centroid_embedding: [],
-      size: 10,
-      source_urls: ['https://example.com/docs/best-practices'],
-      position: { x: -3, y: -1, z: -2 },
-      color_group: 'pink',
-    },
-    {
-      id: 'node-6',
-      analysis_id: 'demo-1',
-      title: 'Troubleshooting',
-      summary: 'Common issues and solutions. Debug guides and error resolution strategies.',
-      keywords: ['troubleshooting', 'debugging', 'errors', 'solutions'],
-      centroid_embedding: [],
-      size: 8,
-      source_urls: ['https://example.com/docs/troubleshooting'],
-      position: { x: 2, y: 1, z: 3 },
-      color_group: 'cyan',
-    },
-  ],
-  edges: [
-    { id: 'e1', analysis_id: 'demo-1', source_intent_id: 'node-1', target_intent_id: 'node-2', weight: 0.85, reason: 'semantic_similarity' },
-    { id: 'e2', analysis_id: 'demo-1', source_intent_id: 'node-2', target_intent_id: 'node-3', weight: 0.72, reason: 'semantic_similarity' },
-    { id: 'e3', analysis_id: 'demo-1', source_intent_id: 'node-3', target_intent_id: 'node-4', weight: 0.68, reason: 'shared_pages' },
-    { id: 'e4', analysis_id: 'demo-1', source_intent_id: 'node-2', target_intent_id: 'node-5', weight: 0.65, reason: 'semantic_similarity' },
-    { id: 'e5', analysis_id: 'demo-1', source_intent_id: 'node-4', target_intent_id: 'node-6', weight: 0.55, reason: 'semantic_similarity' },
-    { id: 'e6', analysis_id: 'demo-1', source_intent_id: 'node-1', target_intent_id: 'node-6', weight: 0.45, reason: 'shared_pages' },
-  ],
-};
-
-const mockEvidence = [
-  {
-    id: 'ev-1',
-    intent_id: 'node-1',
-    page_id: 'p1',
-    url: 'https://example.com/docs/intro',
-    page_title: 'Introduction | Example Docs',
-    snippet: 'Welcome to our platform. This guide will help you get started with the basics of installation and configuration.',
-  },
-  {
-    id: 'ev-2',
-    intent_id: 'node-1',
-    page_id: 'p2',
-    url: 'https://example.com/docs/setup',
-    page_title: 'Setup Guide | Example Docs',
-    snippet: 'Follow these steps to set up your development environment. First, install the required dependencies...',
-  },
-];
+import { supabase } from '@/integrations/supabase/client';
+import { Analysis, AnalysisParams, AnalysisStep, ANALYSIS_STEPS, DEFAULT_PARAMS, GraphData, IntentNode, Edge, Evidence } from '@/types';
 
 export function useAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -121,34 +14,92 @@ export function useAnalysis() {
     setSteps(ANALYSIS_STEPS.map(s => ({ ...s, status: 'pending' })));
 
     try {
-      // Simulate the analysis pipeline
-      const stepDelay = 800;
-      
-      for (let i = 0; i < ANALYSIS_STEPS.length; i++) {
-        setSteps(prev => prev.map((s, idx) => ({
-          ...s,
-          status: idx === i ? 'running' : idx < i ? 'complete' : 'pending'
-        })));
-        
-        await new Promise(resolve => setTimeout(resolve, stepDelay));
-        
-        setSteps(prev => prev.map((s, idx) => ({
-          ...s,
-          status: idx <= i ? 'complete' : 'pending'
-        })));
+      // Start the animation for steps
+      const stepLabels = ['discover', 'fetch', 'extract', 'chunk', 'embed', 'cluster', 'graph'];
+      let currentStep = 0;
+
+      const stepInterval = setInterval(() => {
+        if (currentStep < stepLabels.length) {
+          setSteps(prev => prev.map((s, idx) => ({
+            ...s,
+            status: idx === currentStep ? 'running' : idx < currentStep ? 'complete' : 'pending'
+          })));
+          currentStep++;
+        }
+      }, 2000);
+
+      // Call the analyze edge function
+      const { data, error: funcError } = await supabase.functions.invoke('analyze', {
+        body: {
+          url,
+          max_pages: params.max_pages,
+          max_depth: params.max_depth,
+          same_domain_only: params.same_domain_only,
+          force: params.force_recompute,
+        },
+      });
+
+      clearInterval(stepInterval);
+
+      if (funcError) {
+        throw new Error(funcError.message || 'Analysis failed');
       }
 
-      // Return mock data for demo
-      const data = {
-        ...mockGraphData,
-        source_url: url,
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Mark all steps as complete
+      setSteps(prev => prev.map(s => ({ ...s, status: 'complete' })));
+
+      // Fetch the graph data
+      const { data: graphResponse, error: graphError } = await supabase.functions.invoke('graph', {
+        body: {},
+        method: 'GET',
+      });
+
+      // Actually, we need to use fetch for GET requests with path params
+      const graphUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/graph/${data.graph_id}`;
+      const graphRes = await fetch(graphUrl, {
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+
+      if (!graphRes.ok) {
+        throw new Error('Failed to fetch graph data');
+      }
+
+      const graph = await graphRes.json();
+
+      const result: GraphData = {
+        graph_id: graph.graph_id,
+        created_at: graph.created_at,
+        source_url: graph.source_url,
+        nodes: (graph.nodes || []).map((node: any) => ({
+          ...node,
+          keywords: Array.isArray(node.keywords) ? node.keywords : [],
+          source_urls: Array.isArray(node.source_urls) ? node.source_urls : [],
+          position: node.position || { x: 0, y: 0, z: 0 },
+        })),
+        edges: (graph.edges || []).map((edge: any) => ({
+          id: edge.id,
+          analysis_id: graph.graph_id,
+          source_intent_id: edge.source_intent_id,
+          target_intent_id: edge.target_intent_id,
+          weight: edge.weight,
+          reason: edge.reason,
+        })),
       };
-      
-      setGraphData(data);
-      return data;
+
+      setGraphData(result);
+      return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Analysis failed';
       setError(message);
+      setSteps(prev => prev.map(s => 
+        s.status === 'running' ? { ...s, status: 'error' } : s
+      ));
       throw err;
     } finally {
       setIsAnalyzing(false);
@@ -157,7 +108,7 @@ export function useAnalysis() {
 
   const reset = useCallback(() => {
     setIsAnalyzing(false);
-    setSteps(ANALYSIS_STEPS);
+    setSteps(ANALYSIS_STEPS.map(s => ({ ...s, status: 'pending' })));
     setGraphData(null);
     setError(null);
   }, []);
@@ -183,29 +134,21 @@ export function useSearch() {
     }
 
     setIsSearching(true);
-    
+
     try {
-      // Simulate search delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Mock search results based on query
-      const mockResults = mockGraphData.nodes
-        .filter(node => 
-          node.title.toLowerCase().includes(query.toLowerCase()) ||
-          node.keywords.some(k => k.toLowerCase().includes(query.toLowerCase())) ||
-          node.summary.toLowerCase().includes(query.toLowerCase())
-        )
-        .map(node => ({
-          node_id: node.id,
-          score: Math.random() * 0.3 + 0.7,
-          title: node.title,
-          summary: node.summary,
-          keywords: node.keywords,
-          evidence: mockEvidence.filter(e => e.intent_id === node.id),
-        }));
-      
-      setResults(mockResults);
-      return mockResults;
+      const { data, error } = await supabase.functions.invoke('search', {
+        body: { graph_id: graphId, query, top_k: 10 },
+      });
+
+      if (error) throw error;
+
+      const searchResults = data.results || [];
+      setResults(searchResults);
+      return searchResults;
+    } catch (err) {
+      console.error('Search error:', err);
+      setResults([]);
+      return [];
     } finally {
       setIsSearching(false);
     }
@@ -221,17 +164,37 @@ export function useSearch() {
 
 export function useNodeDetails() {
   const [isLoading, setIsLoading] = useState(false);
-  const [evidence, setEvidence] = useState<any[]>([]);
+  const [evidence, setEvidence] = useState<Evidence[]>([]);
 
   const fetchDetails = useCallback(async (graphId: string, nodeId: string) => {
     setIsLoading(true);
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Mock evidence data
-      setEvidence(mockEvidence);
-      return mockEvidence;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/content/${graphId}/${nodeId}`;
+      const res = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+
+      if (!res.ok) throw new Error('Failed to fetch details');
+
+      const data = await res.json();
+      const evidenceList = (data.evidence || []).map((e: any) => ({
+        id: e.id || crypto.randomUUID(),
+        intent_id: nodeId,
+        page_id: e.page_id || '',
+        url: e.url,
+        page_title: e.page_title,
+        snippet: e.snippet,
+      }));
+
+      setEvidence(evidenceList);
+      return evidenceList;
+    } catch (err) {
+      console.error('Fetch details error:', err);
+      setEvidence([]);
+      return [];
     } finally {
       setIsLoading(false);
     }

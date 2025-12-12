@@ -14,7 +14,260 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analyses: {
+        Row: {
+          chunks_count: number
+          created_at: string
+          error_message: string | null
+          id: string
+          intents_count: number
+          pages_crawled: number
+          params: Json
+          source_url: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          chunks_count?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          intents_count?: number
+          pages_crawled?: number
+          params?: Json
+          source_url: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          chunks_count?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          intents_count?: number
+          pages_crawled?: number
+          params?: Json
+          source_url?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      chunks: {
+        Row: {
+          analysis_id: string
+          chunk_index: number
+          chunk_text: string
+          embedding: Json | null
+          id: string
+          page_id: string
+        }
+        Insert: {
+          analysis_id: string
+          chunk_index: number
+          chunk_text: string
+          embedding?: Json | null
+          id?: string
+          page_id: string
+        }
+        Update: {
+          analysis_id?: string
+          chunk_index?: number
+          chunk_text?: string
+          embedding?: Json | null
+          id?: string
+          page_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chunks_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chunks_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      edges: {
+        Row: {
+          analysis_id: string
+          id: string
+          reason: string
+          source_intent_id: string
+          target_intent_id: string
+          weight: number
+        }
+        Insert: {
+          analysis_id: string
+          id?: string
+          reason?: string
+          source_intent_id: string
+          target_intent_id: string
+          weight?: number
+        }
+        Update: {
+          analysis_id?: string
+          id?: string
+          reason?: string
+          source_intent_id?: string
+          target_intent_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "edges_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edges_source_intent_id_fkey"
+            columns: ["source_intent_id"]
+            isOneToOne: false
+            referencedRelation: "intents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edges_target_intent_id_fkey"
+            columns: ["target_intent_id"]
+            isOneToOne: false
+            referencedRelation: "intents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evidence: {
+        Row: {
+          id: string
+          intent_id: string
+          page_id: string
+          page_title: string
+          snippet: string
+          url: string
+        }
+        Insert: {
+          id?: string
+          intent_id: string
+          page_id: string
+          page_title?: string
+          snippet: string
+          url: string
+        }
+        Update: {
+          id?: string
+          intent_id?: string
+          page_id?: string
+          page_title?: string
+          snippet?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "intents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intents: {
+        Row: {
+          analysis_id: string
+          centroid_embedding: Json | null
+          color_group: string | null
+          id: string
+          keywords: Json
+          position: Json
+          size: number
+          source_urls: Json
+          summary: string
+          title: string
+        }
+        Insert: {
+          analysis_id: string
+          centroid_embedding?: Json | null
+          color_group?: string | null
+          id?: string
+          keywords?: Json
+          position?: Json
+          size?: number
+          source_urls?: Json
+          summary?: string
+          title: string
+        }
+        Update: {
+          analysis_id?: string
+          centroid_embedding?: Json | null
+          color_group?: string | null
+          id?: string
+          keywords?: Json
+          position?: Json
+          size?: number
+          source_urls?: Json
+          summary?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intents_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pages: {
+        Row: {
+          analysis_id: string
+          content_hash: string
+          extracted_text: string
+          id: string
+          title: string
+          url: string
+        }
+        Insert: {
+          analysis_id: string
+          content_hash?: string
+          extracted_text?: string
+          id?: string
+          title?: string
+          url: string
+        }
+        Update: {
+          analysis_id?: string
+          content_hash?: string
+          extracted_text?: string
+          id?: string
+          title?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pages_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
