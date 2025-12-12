@@ -57,7 +57,7 @@ export function DetailPanel({ node, evidence, isLoading, onClose }: DetailPanelP
         {/* Header */}
         <div className="p-4 border-b border-border/50 flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-foreground truncate">
+            <h2 className="text-lg font-semibold text-foreground break-words">
               {node.title}
             </h2>
             <div className="flex items-center gap-2 mt-1">
@@ -97,7 +97,7 @@ export function DetailPanel({ node, evidence, isLoading, onClose }: DetailPanelP
                   Copy
                 </Button>
               </div>
-              <p className="text-sm text-foreground/90 leading-relaxed">
+              <p className="text-sm text-foreground/90 leading-relaxed break-words whitespace-pre-wrap">
                 {node.summary}
               </p>
             </div>
@@ -152,7 +152,7 @@ export function DetailPanel({ node, evidence, isLoading, onClose }: DetailPanelP
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group py-1"
                   >
                     <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                    <span className="truncate">{url}</span>
+                    <span className="break-all line-clamp-2 flex-1">{url}</span>
                     <ChevronRight className="w-3 h-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </a>
                 ))}
@@ -193,7 +193,7 @@ export function DetailPanel({ node, evidence, isLoading, onClose }: DetailPanelP
                         {ev.page_title}
                         <ExternalLink className="w-3 h-3" />
                       </a>
-                      <p className="text-sm text-foreground/80 leading-relaxed">
+                      <p className="text-sm text-foreground/80 leading-relaxed break-words whitespace-pre-wrap">
                         "{ev.snippet}"
                       </p>
                     </motion.div>

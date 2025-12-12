@@ -4,6 +4,7 @@ import {
   Eye,
   EyeOff,
   RotateCcw,
+  Home,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Scene3D } from '@/components/Scene3D';
@@ -63,44 +64,58 @@ export function ExplorerView({ graphData, onBack }: ExplorerViewProps) {
       {/* Header */}
       <ExplorerHeader />
 
-      {/* Control buttons - top right */}
+      {/* Control buttons - top right - moved down to avoid header overlap */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="absolute top-6 right-6 z-20 flex items-center gap-2"
+        className="absolute top-24 right-6 z-20 flex items-center gap-3"
       >
-        <Button
-          variant={showEdges ? "secondary" : "ghost"}
-          size="icon"
-          onClick={() => setShowEdges(!showEdges)}
-          title={showEdges ? "Hide edges" : "Show edges"}
-          className="glass-panel"
-        >
-          {showEdges ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-        </Button>
+        {/* Toggle Edges */}
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant={showEdges ? "default" : "secondary"}
+            size="icon"
+            onClick={() => setShowEdges(!showEdges)}
+            className={`
+              glass-panel backdrop-blur-xl border-2 
+              ${showEdges 
+                ? 'bg-primary/20 border-primary/50 text-primary hover:bg-primary/30' 
+                : 'bg-secondary/50 border-border/50 hover:bg-secondary/70'
+              }
+              transition-all duration-200
+            `}
+            title={showEdges ? "Hide connection lines" : "Show connection lines"}
+          >
+            {showEdges ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+          </Button>
+        </motion.div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleResetView}
-          title="Reset view"
-          className="glass-panel"
-        >
-          <RotateCcw className="w-4 h-4" />
-        </Button>
+        {/* Reset View */}
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={handleResetView}
+            className="glass-panel backdrop-blur-xl border-2 border-border/50 hover:border-primary/50 hover:text-primary transition-all duration-200"
+            title="Reset view (deselect node)"
+          >
+            <RotateCcw className="w-5 h-5" />
+          </Button>
+        </motion.div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
-          title="Back to home"
-          className="glass-panel"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-        </Button>
+        {/* Back to Home */}
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={onBack}
+            className="glass-panel backdrop-blur-xl border-2 border-border/50 hover:border-primary/50 hover:text-primary transition-all duration-200"
+            title="Back to home page"
+          >
+            <Home className="w-5 h-5" />
+          </Button>
+        </motion.div>
       </motion.div>
 
       {/* Empty state hint when no node selected */}
